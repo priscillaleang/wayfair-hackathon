@@ -28,6 +28,15 @@ export default function Home() {
             Order ORD-1002 · Wayfair Delivery Network
           </div>
         </Link>
+        <Link
+          href="/inspect/ORD-1003"
+          className="block p-4 bg-purple-700 text-white rounded-lg shadow-sm active:bg-purple-800"
+        >
+          <div className="font-medium">33&quot; Velvet Accent Chair (Set of 2)</div>
+          <div className="text-purple-100 text-xs mt-1">
+            Order ORD-1003 · Estes Express (LTL)
+          </div>
+        </Link>
       </div>
       <p className="text-xs text-gray-400 mt-6">
         Demo build · powered by Cloudflare Workers + Baseten
