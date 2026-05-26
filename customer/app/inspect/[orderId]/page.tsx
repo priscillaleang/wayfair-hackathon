@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 
-const WORKER = process.env.NEXT_PUBLIC_WORKER_URL ?? 'http://localhost:8787';
+const WORKER = process.env.NEXT_PUBLIC_WORKER_URL || '';
 
 type Step = {
   index: number;
