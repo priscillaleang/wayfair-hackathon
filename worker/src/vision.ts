@@ -1,8 +1,9 @@
 import { VisionResultSchema, type VisionResult } from './types';
 
 type VisionEnv = {
-  BASETEN_VISION_ENDPOINT_URL?: string;
-  BASETEN_VISION_API_KEY?: string;
+  SUBCONSCIOUS_VISION_URL?: string;
+  SUBCONSCIOUS_VISION_API_KEY?: string;
+  SUBCONSCIOUS_VISION_MODEL?: string;
   MOCK_VISION?: string;
 };
 
@@ -12,56 +13,65 @@ export async function callBasetenVision(
   promptLabel: string,
   stepIndex: number
 ): Promise<VisionResult> {
-  const url = env.BASETEN_VISION_ENDPOINT_URL?.trim();
-  const key = env.BASETEN_VISION_API_KEY?.trim();
+  const url = env.SUBCONSCIOUS_VISION_URL?.trim();
+  const key = env.SUBCONSCIOUS_VISION_API_KEY?.trim();
+  const model = env.SUBCONSCIOUS_VISION_MODEL?.trim() || 'subconscious/tim-qwen3.6-27b';
   if (env.MOCK_VISION === '1' || env.MOCK_VISION === 'vision_only' || !url || !key) {
     return mockVision(promptLabel, stepIndex);
   }
 
-  const systemPrompt = `You are inspecting a piece of furniture for shipping damage. The user was asked to photograph: "${promptLabel}".
+  const userPrompt = `You are inspecting a piece of furniture for shipping damage. The customer was asked to photograph: "${promptLabel.replace(/_/g, ' ')}".
 
-Respond with strict JSON only, matching this schema exactly:
-{ "validation": { "matchesPrompt": boolean, "confidence": 0-1 },
-  "damage": { "detected": boolean, "severity": "none|minor|moderate|severe", "location": string, "description": string, "boundingBox": [x1,y1,x2,y2] in 0-1 normalized coords or null } }
+Inspect the image carefully. Look for: tears, dents, scratches, broken pieces, exposed stuffing, splintered wood, fabric pulls, missing parts, misalignment, or any visible defect.
 
-Be conservative — only flag damage you can clearly see (tears, dents, scratches, broken pieces, exposed stuffing, splintered wood, fabric pulls). Do not invent damage. If the photo doesn't show the requested area, set matchesPrompt=false but still inspect what's visible.
+Respond with strict JSON only. No prose, no markdown fences, no thinking out loud. Output EXACTLY this schema and nothing else:
 
-Output ONLY the JSON object. No prose, no markdown fences.`;
+{"validation":{"matchesPrompt":true,"confidence":0.0},"damage":{"detected":false,"severity":"none","location":"","description":"","boundingBox":null}}
+
+Rules:
+- severity ∈ {"none","minor","moderate","severe"}
+- If no damage visible: detected=false, severity="none", location="", description="", boundingBox=null
+- If damage visible: detected=true, fill in severity/location/description, boundingBox is [x1,y1,x2,y2] in 0-1 normalized image coords or null
+- matchesPrompt=true if the photo shows the requested area, false otherwise
+- Be conservative — only flag damage you can clearly see
+
+Return ONLY the JSON object.`;
 
   try {
     const res = await fetch(chatUrl(url), {
       method: 'POST',
       headers: { Authorization: `Bearer ${key}`, 'content-type': 'application/json' },
       body: JSON.stringify({
-        model: 'baseten',
+        model,
         messages: [
           {
             role: 'user',
             content: [
-              { type: 'text', text: systemPrompt },
+              { type: 'text', text: userPrompt },
               { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${photoBase64}` } },
             ],
           },
         ],
-        max_tokens: 2500,
+        max_tokens: 3000,
         temperature: 0.1,
+        response_format: { type: 'json_object' },
       }),
     });
     if (!res.ok) {
       const body = await res.text().catch(() => '');
-      console.error('Baseten vision non-200', res.status, body.slice(0, 500));
+      console.error('Vision non-200', res.status, body.slice(0, 500));
       return mockVision(promptLabel, stepIndex);
     }
     const data: any = await res.json();
     const text = extractText(data);
     if (!text) {
-      console.error('Baseten vision empty content', JSON.stringify(data).slice(0, 500));
+      console.error('Vision empty content', JSON.stringify(data).slice(0, 500));
       return mockVision(promptLabel, stepIndex);
     }
     const json = JSON.parse(extractJson(text));
     return VisionResultSchema.parse(json);
   } catch (err) {
-    console.error('Baseten vision failed, using mock', err);
+    console.error('Vision failed, using mock', err);
     return mockVision(promptLabel, stepIndex);
   }
 }
@@ -85,11 +95,15 @@ function extractText(data: any): string {
 }
 
 function extractJson(s: string): string {
-  const m = s.match(/\{[\s\S]*\}/);
-  return m ? m[0] : s;
+  // TIM-style models output reasoning before </think> then the answer
+  const afterThink = s.split('</think>').pop() ?? s;
+  const m = afterThink.match(/\{[\s\S]*\}/);
+  if (m) return m[0];
+  const m2 = s.match(/\{[\s\S]*\}/);
+  return m2 ? m2[0] : s;
 }
 
-// Mock damage shows up on step index 1 (cushion seam) for demo predictability.
+// Mock damage on step 1 (cushion seam / leg joint) for demo predictability.
 function mockVision(promptLabel: string, stepIndex: number): VisionResult {
   if (stepIndex === 1) {
     return {

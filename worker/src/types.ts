@@ -76,7 +76,8 @@ export type Bindings = {
   PHOTOS?: R2Bucket;
   BASETEN_LLM_ENDPOINT_URL?: string;
   BASETEN_LLM_API_KEY?: string;
-  BASETEN_VISION_ENDPOINT_URL?: string;
-  BASETEN_VISION_API_KEY?: string;
+  SUBCONSCIOUS_VISION_URL?: string;
+  SUBCONSCIOUS_VISION_API_KEY?: string;
+  SUBCONSCIOUS_VISION_MODEL?: string;
   MOCK_VISION?: string;
 };
