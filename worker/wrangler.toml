@@ -12,7 +12,7 @@ binding = "PHOTOS"
 bucket_name = "wayfair-inspection-photos"
 
 [vars]
-MOCK_VISION = "1"
+MOCK_VISION = ""
 # Set via .dev.vars (local) or `wrangler secret put` (prod):
 #   BASETEN_LLM_ENDPOINT_URL   (e.g. https://model-XXXX.api.baseten.co/environments/production/sync/v1)
 #   BASETEN_LLM_API_KEY
