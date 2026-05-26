@@ -1,0 +1,18 @@
+name = "wayfair-inspection"
+main = "src/index.ts"
+compatibility_date = "2025-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "PLACEHOLDER_KV_ID"
+
+[[r2_buckets]]
+binding = "PHOTOS"
+bucket_name = "wayfair-inspection-photos"
+
+[vars]
+BASETEN_VISION_URL = "https://model-PLACEHOLDER.api.baseten.co/production/predict"
+BASETEN_LLM_URL = "https://model-PLACEHOLDER.api.baseten.co/production/predict"
+MOCK_VISION = "1"
+# BASETEN_API_KEY set via `wrangler secret put BASETEN_API_KEY`

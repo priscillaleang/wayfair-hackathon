@@ -1,0 +1,15 @@
+{
+  "SECT-9381": [
+    { "index": 0, "instruction": "Photograph the back-right corner.", "promptLabel": "back_right_corner", "type": "photo", "detectionROI": 0.34 },
+    { "index": 1, "instruction": "Photograph the cushion seam where chaise meets sofa.", "promptLabel": "cushion_seam", "type": "photo", "detectionROI": 0.28 },
+    { "index": 2, "instruction": "Slide the third drawer in and out. Did it stick?", "type": "yesno", "detectionROI": 0.12 },
+    { "index": 3, "instruction": "Photograph the front-left leg.", "promptLabel": "front_left_leg", "type": "photo", "detectionROI": 0.18 },
+    { "index": 4, "instruction": "Anything else look wrong? (optional photo)", "type": "photo_optional", "detectionROI": 0.08 }
+  ],
+  "CONSOLE-2244": [
+    { "index": 0, "instruction": "Photograph the tabletop edge.", "promptLabel": "tabletop_edge", "type": "photo", "detectionROI": 0.42 },
+    { "index": 1, "instruction": "Photograph the leg joint underneath.", "promptLabel": "leg_joint", "type": "photo", "detectionROI": 0.31 },
+    { "index": 2, "instruction": "Does the drawer slide smoothly?", "type": "yesno", "detectionROI": 0.15 },
+    { "index": 3, "instruction": "Photograph the back panel.", "promptLabel": "back_panel", "type": "photo", "detectionROI": 0.12 }
+  ]
+}

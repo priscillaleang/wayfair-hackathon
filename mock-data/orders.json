@@ -1,0 +1,28 @@
+{
+  "ORD-1001": {
+    "orderId": "ORD-1001",
+    "sku": "SECT-9381",
+    "productName": "Hartley 4-Piece Sectional",
+    "supplier": "Mistana",
+    "carrier": "Estes Express",
+    "carrierType": "LTL",
+    "concealedDamageWindowDays": 5,
+    "proNumber": "EST-7733410",
+    "bolNumber": "BOL-9928141",
+    "deliveredAt": "2026-05-26T17:45:00Z",
+    "value": 1849.00
+  },
+  "ORD-1002": {
+    "orderId": "ORD-1002",
+    "sku": "CONSOLE-2244",
+    "productName": "Westbrook Console Table",
+    "supplier": "Three Posts",
+    "carrier": "Wayfair Delivery Network",
+    "carrierType": "WDN_FULL_SERVICE",
+    "concealedDamageWindowDays": 3,
+    "proNumber": "WDN-1198223",
+    "bolNumber": "BOL-9928142",
+    "deliveredAt": "2026-05-26T17:45:00Z",
+    "value": 429.00
+  }
+}
