@@ -16,15 +16,28 @@ const MOCK_EVENTS: AgentEvent[] = [
   { ts: new Date(Date.now() - 5000).toISOString(), sessionId: "sess_mock", type: "session_completed", payload: { duration: 47 } },
 ];
 
-const TYPE_STYLES: Record<string, { color: string; label: string }> = {
-  session_started:  { color: "bg-blue-900",    label: "Inspection started" },
-  step_advanced:    { color: "bg-slate-800",    label: "Step advanced" },
-  photo_uploaded:   { color: "bg-purple-900",   label: "📸 Photo uploaded" },
-  vision_called:    { color: "bg-purple-800",   label: "🧠 Vision call (Baseten)" },
-  damage_detected:  { color: "bg-red-900",      label: "⚠ Damage detected" },
-  claim_drafted:    { color: "bg-amber-800",    label: "📋 Claim drafted (NMFC-compliant)" },
-  session_completed:{ color: "bg-emerald-800",  label: "✓ Session complete" },
+type EventStyle = { border: string; dot: string; label: string };
+const TYPE_STYLES: Record<string, EventStyle> = {
+  session_started:   { border: "#3b82f6", dot: "#60a5fa", label: "Inspection started" },
+  step_advanced:     { border: "#4b5563", dot: "#9ca3af", label: "Step advanced" },
+  photo_uploaded:    { border: "#7c3aed", dot: "#a78bfa", label: "📸 Photo uploaded" },
+  vision_called:     { border: "#6d28d9", dot: "#8b5cf6", label: "🧠 Vision call · Baseten" },
+  damage_detected:   { border: "#dc2626", dot: "#f87171", label: "⚠ Damage detected" },
+  claim_drafted:     { border: "#d97706", dot: "#fbbf24", label: "📋 Claim drafted · NMFC-compliant" },
+  session_completed: { border: "#059669", dot: "#34d399", label: "✓ Session complete" },
 };
+
+function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  return (
+    <div style={{ background: "#13101f", border: "1px solid #2a2045", borderRadius: 12, padding: 16, ...style }}>
+      {children}
+    </div>
+  );
+}
+
+function Label({ children }: { children: React.ReactNode }) {
+  return <div style={{ fontSize: 10, color: "#9080c0", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>{children}</div>;
+}
 
 export default function LivePage() {
   const [events, setEvents] = useState<AgentEvent[]>([]);
@@ -34,7 +47,6 @@ export default function LivePage() {
   useEffect(() => {
     const es = new EventSource(`${WORKER}/api/admin/stream`);
     let connected = false;
-
     es.onopen = () => { connected = true; };
     es.onmessage = (e) => {
       const evt = JSON.parse(e.data) as AgentEvent;
@@ -49,7 +61,6 @@ export default function LivePage() {
         setActive("sess_mock");
       }
     };
-
     return () => es.close();
   }, []);
 
@@ -59,37 +70,49 @@ export default function LivePage() {
   const claim = sessionEvents.find((e) => e.type === "claim_drafted")?.payload;
 
   return (
-    <main className="p-8 max-w-7xl mx-auto">
-      <header className="flex items-baseline justify-between mb-6">
-        <div className="flex items-baseline gap-4">
-          <h1 className="text-4xl font-bold">Agent · Live</h1>
+    <main style={{ padding: "32px", maxWidth: 1400, margin: "0 auto" }}>
+      {/* Header */}
+      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: isMock ? "#f59e0b" : "#34d399", boxShadow: isMock ? "0 0 8px #f59e0b" : "0 0 8px #34d399", display: "inline-block" }} />
+            <h1 style={{ fontSize: 28, fontWeight: 700, color: "#ede9fe", margin: 0 }}>Agent · Live</h1>
+          </div>
           {isMock && (
-            <span className="text-xs px-2 py-1 rounded bg-amber-900 text-amber-300">mock data</span>
+            <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: "rgba(245,158,11,0.12)", color: "#fbbf24", border: "1px solid rgba(245,158,11,0.3)" }}>
+              mock data
+            </span>
           )}
         </div>
-        <div className="text-sm text-slate-400 font-mono">{active ?? "Waiting for inspection…"}</div>
+        <span style={{ fontSize: 12, color: "#8070b0", fontFamily: "var(--font-geist-mono)" }}>
+          {active ?? "Waiting for inspection…"}
+        </span>
       </header>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 20 }}>
         {/* Timeline */}
-        <div className="col-span-2 space-y-3">
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {sessionEvents.length === 0 && (
-            <div className="text-slate-500 py-12 text-center">Waiting for events…</div>
+            <div style={{ textAlign: "center", padding: "60px 0", color: "#4b3f72" }}>
+              Waiting for events…
+            </div>
           )}
           {sessionEvents.map((e, i) => {
-            const style = TYPE_STYLES[e.type] ?? { color: "bg-slate-800", label: e.type };
+            const s = TYPE_STYLES[e.type] ?? { border: "#4b5563", dot: "#9ca3af", label: e.type };
             return (
-              <div key={i} className={`p-4 rounded-lg ${style.color}`}>
-                <div className="flex justify-between text-xs opacity-60 mb-1">
-                  <span>{new Date(e.ts).toLocaleTimeString()}</span>
-                  <span className="font-mono">{e.sessionId}</span>
+              <div key={i} style={{ background: "#13101f", border: `1px solid #2a2045`, borderLeft: `3px solid ${s.border}`, borderRadius: 10, padding: "14px 16px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.dot, flexShrink: 0, display: "inline-block" }} />
+                  <span style={{ fontSize: 15, fontWeight: 600, color: "#f5f0ff" }}>{s.label}</span>
                 </div>
-                <div className="text-lg font-semibold">{style.label}</div>
+                <div style={{ fontSize: 11, color: "#7060a0", fontFamily: "var(--font-geist-mono)", marginLeft: 14, marginBottom: 4 }}>
+                  {new Date(e.ts).toLocaleTimeString()}
+                </div>
                 {e.type === "step_advanced" && (
-                  <div className="text-sm mt-1 opacity-80">{e.payload?.instruction}</div>
+                  <div style={{ fontSize: 13, color: "#b0a0d8", marginLeft: 14 }}>{e.payload?.instruction}</div>
                 )}
                 {(e.type === "vision_called" || e.type === "damage_detected" || e.type === "claim_drafted") && (
-                  <pre className="text-xs mt-2 opacity-75 overflow-auto max-h-32 whitespace-pre-wrap">
+                  <pre style={{ fontSize: 11, color: "#a090c8", marginTop: 8, marginLeft: 14, overflow: "auto", maxHeight: 100, whiteSpace: "pre-wrap" }}>
                     {JSON.stringify(e.payload, null, 2)}
                   </pre>
                 )}
@@ -99,64 +122,66 @@ export default function LivePage() {
         </div>
 
         {/* Sidebar */}
-        <aside className="space-y-4">
+        <aside style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {order && (
-            <div className="p-4 bg-slate-900 rounded-lg">
-              <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">Order</div>
-              <div className="text-lg font-semibold">{order.productName}</div>
-              <div className="text-sm text-slate-400 mt-1">{order.carrier} · {order.carrierType}</div>
-              <div className="mt-2 text-sm">
-                <span className="text-amber-400 font-bold">{order.concealedDamageWindowDays}-day</span>
-                <span className="text-slate-400"> notification window</span>
+            <Card>
+              <Label>Order</Label>
+              <div style={{ fontSize: 16, fontWeight: 600, color: "#ede9fe" }}>{order.productName}</div>
+              <div style={{ fontSize: 13, color: "#9080c0", marginTop: 4 }}>{order.carrier} · {order.carrierType}</div>
+              <div style={{ marginTop: 10, fontSize: 13 }}>
+                <span style={{ color: "#a78bfa", fontWeight: 700 }}>{order.concealedDamageWindowDays}-day</span>
+                <span style={{ color: "#8070b0" }}> notification window</span>
               </div>
-            </div>
+            </Card>
           )}
 
           {damageEvents.length > 0 && (
-            <div className="p-4 bg-red-950 border border-red-900 rounded-lg">
-              <div className="text-xs text-red-300 uppercase tracking-wide mb-2">Damage Findings</div>
+            <Card style={{ borderColor: "rgba(220,38,38,0.35)", background: "rgba(20,8,8,0.8)" }}>
+              <Label>Damage Findings</Label>
               {damageEvents.map((e, i) => (
-                <div key={i} className="mt-1 text-sm">
-                  <strong className="text-red-300">{e.payload?.severity ?? "reported"}</strong>
-                  {e.payload?.description ? `: ${e.payload.description}` : ""}
+                <div key={i} style={{ fontSize: 13, marginTop: i > 0 ? 8 : 0 }}>
+                  <span style={{ color: "#f87171", fontWeight: 600 }}>{e.payload?.severity ?? "reported"}</span>
+                  {e.payload?.description ? <span style={{ color: "#9ca3af" }}>: {e.payload.description}</span> : null}
                 </div>
               ))}
-            </div>
+            </Card>
           )}
 
           {claim && (
-            <div className="p-4 bg-amber-950 border border-amber-800 rounded-lg">
-              <div className="text-xs text-amber-300 uppercase tracking-wide mb-2">Claim Drafted</div>
-              <div className="text-lg font-semibold font-mono">{claim.claimId}</div>
-              <div className="text-xs text-amber-200 mt-1">
-                {claim.withinWindow ? "✓ Within window" : "⚠ OUTSIDE window"} · Deadline {claim.windowDeadline}
+            <Card style={{ borderColor: "rgba(217,119,6,0.35)", background: "rgba(20,14,4,0.8)" }}>
+              <Label>Claim Drafted</Label>
+              <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "var(--font-geist-mono)", color: "#fbbf24" }}>{claim.claimId}</div>
+              <div style={{ fontSize: 12, color: "#92400e", marginTop: 6 }}>
+                {claim.withinWindow
+                  ? <span style={{ color: "#34d399" }}>✓ Within window</span>
+                  : <span style={{ color: "#f87171" }}>⚠ OUTSIDE window</span>}
+                {" "}· Deadline {claim.windowDeadline}
               </div>
-              <details className="mt-2 text-xs">
-                <summary className="cursor-pointer text-amber-300">View draft</summary>
-                <p className="mt-2 text-amber-100 whitespace-pre-wrap opacity-80">{claim.draftText}</p>
+              <details style={{ marginTop: 10 }}>
+                <summary style={{ fontSize: 12, color: "#d97706", cursor: "pointer" }}>View draft</summary>
+                <p style={{ fontSize: 11, color: "#92400e", marginTop: 8, whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{claim.draftText}</p>
               </details>
-            </div>
+            </Card>
           )}
 
           <CostPanel claim={claim} order={order} />
 
-          {/* Vision reasoning panel */}
           {sessionEvents.some((e) => e.type === "vision_called" || e.type === "damage_detected") && (
-            <div className="p-4 bg-slate-900 rounded-lg">
-              <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">Vision Reasoning</div>
-              <div className="space-y-2">
+            <Card>
+              <Label>Vision Reasoning</Label>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {sessionEvents
                   .filter((e) => e.type === "vision_called" || e.type === "damage_detected")
                   .map((e, i) => (
-                    <div key={i} className={`p-3 rounded text-xs ${e.type === "vision_called" ? "bg-purple-950" : "bg-red-950"}`}>
-                      <div className="font-semibold mb-1 opacity-70">
+                    <div key={i} style={{ padding: "10px 12px", borderRadius: 8, background: e.type === "vision_called" ? "rgba(109,40,217,0.12)" : "rgba(220,38,38,0.08)", border: `1px solid ${e.type === "vision_called" ? "rgba(109,40,217,0.25)" : "rgba(220,38,38,0.2)"}` }}>
+                      <div style={{ fontSize: 11, color: e.type === "vision_called" ? "#8b5cf6" : "#f87171", marginBottom: 6, fontWeight: 600 }}>
                         {e.type === "vision_called" ? "🧠 Vision call" : "⚠ Damage"}
                       </div>
-                      <pre className="whitespace-pre-wrap opacity-80">{JSON.stringify(e.payload, null, 2)}</pre>
+                      <pre style={{ fontSize: 10, color: "#a090c8", whiteSpace: "pre-wrap" }}>{JSON.stringify(e.payload, null, 2)}</pre>
                     </div>
                   ))}
               </div>
-            </div>
+            </Card>
           )}
         </aside>
       </div>

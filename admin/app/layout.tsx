@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Wayfair Inspection Agent — Live View",
+  title: "TeraInspect",
   description: "Big-and-bulky concealed-damage inspection. Real-time agent workflow.",
 };
 

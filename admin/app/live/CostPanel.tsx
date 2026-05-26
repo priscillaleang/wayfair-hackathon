@@ -5,22 +5,29 @@ export function CostPanel({ claim, order }: { claim: any; order: any }) {
   const recovered = claim.withinWindow ? claimValue : 0;
   const net = recovered - inspectionCost;
   return (
-    <div className="p-4 bg-slate-900 rounded-lg">
-      <div className="text-xs text-slate-400 uppercase tracking-wide mb-3">Economic Impact</div>
-      <div className="grid grid-cols-2 gap-2 text-sm">
-        <div className="text-slate-300">Order value</div>
-        <div className="text-right">${claimValue.toFixed(2)}</div>
-        <div className="text-slate-300">Inspection cost</div>
-        <div className="text-right text-red-400">-${inspectionCost.toFixed(2)}</div>
-        <div className="text-slate-300">Recovered</div>
-        <div className="text-right text-emerald-400">${recovered.toFixed(2)}</div>
-        <div className="font-bold border-t border-slate-700 pt-2">Net</div>
-        <div className={`text-right font-bold border-t border-slate-700 pt-2 ${net >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+    <div style={{ background: "#13101f", border: "1px solid #2a2045", borderRadius: 12, padding: 16 }}>
+      <div style={{ fontSize: 10, color: "#9080c0", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>
+        Economic Impact
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "6px 12px", fontSize: 13 }}>
+        <span style={{ color: "#a090c0" }}>Order value</span>
+        <span style={{ textAlign: "right", color: "#ede9fe" }}>${claimValue.toFixed(2)}</span>
+
+        <span style={{ color: "#a090c0" }}>Inspection cost</span>
+        <span style={{ textAlign: "right", color: "#f87171" }}>-${inspectionCost.toFixed(2)}</span>
+
+        <span style={{ color: "#a090c0" }}>Recovered</span>
+        <span style={{ textAlign: "right", color: "#34d399" }}>${recovered.toFixed(2)}</span>
+
+        <div style={{ gridColumn: "1 / -1", height: 1, background: "#2a2045", margin: "4px 0" }} />
+
+        <span style={{ fontWeight: 700, color: "#ede9fe" }}>Net</span>
+        <span style={{ textAlign: "right", fontWeight: 700, color: net >= 0 ? "#34d399" : "#f87171" }}>
           ${net.toFixed(2)}
-        </div>
+        </span>
       </div>
       {!claim.withinWindow && (
-        <div className="mt-3 text-xs text-red-400">
+        <div style={{ marginTop: 12, fontSize: 11, color: "#f87171", paddingTop: 10, borderTop: "1px solid rgba(220,38,38,0.2)" }}>
           ⚠ Outside window — would have been denied without this agent.
         </div>
       )}

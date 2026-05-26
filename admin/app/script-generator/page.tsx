@@ -14,14 +14,12 @@ const CANDIDATE_POOL = {
   ],
 } as const;
 
-const SKU_NAMES: Record<string, string> = {
-  "SECT-9381": "Hartley 4-Piece Sectional",
-};
+const SKU_NAMES: Record<string, string> = { "SECT-9381": "Hartley 4-Piece Sectional" };
 
-const TYPE_BADGE: Record<string, string> = {
-  photo:          "bg-purple-900 text-purple-200",
-  photo_optional: "bg-slate-700 text-slate-300",
-  yesno:          "bg-blue-900 text-blue-200",
+const TYPE_BADGE: Record<string, { bg: string; color: string }> = {
+  photo:          { bg: "rgba(109,40,217,0.2)",  color: "#a78bfa" },
+  photo_optional: { bg: "rgba(75,63,114,0.2)",   color: "#7c6fa0" },
+  yesno:          { bg: "rgba(59,130,246,0.15)", color: "#93c5fd" },
 };
 
 export default function ScriptGen() {
@@ -35,11 +33,7 @@ export default function ScriptGen() {
     const res = await fetch("/api/script-gen", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        sku,
-        productName: SKU_NAMES[sku],
-        candidatePool: CANDIDATE_POOL[sku],
-      }),
+      body: JSON.stringify({ sku, productName: SKU_NAMES[sku], candidatePool: CANDIDATE_POOL[sku] }),
     });
     setResult(await res.json());
     setRunning(false);
@@ -49,109 +43,126 @@ export default function ScriptGen() {
   const totalTime = selected?.reduce((s, q) => s + q.estimatedSeconds, 0);
 
   return (
-    <main className="p-8 max-w-6xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Inspection Script Generator</h1>
-        <p className="text-slate-400">
+    <main style={{ padding: 32, maxWidth: 1100, margin: "0 auto" }}>
+      {/* Ambient glow */}
+      <div style={{ position: "fixed", top: 0, left: "50%", transform: "translateX(-50%)", width: 500, height: 250, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(124,58,237,0.12), transparent 70%)", pointerEvents: "none" }} />
+
+      <div style={{ marginBottom: 32 }}>
+        <h1 style={{ fontSize: 32, fontWeight: 700, color: "#ede9fe", marginBottom: 8 }}>
+          Inspection Script Generator
+        </h1>
+        <p style={{ fontSize: 15, color: "#6d5fa0", lineHeight: 1.6 }}>
           Subconscious scores each candidate question against damage scenarios for this SKU.
-          We pick the <span className="text-emerald-400 font-semibold">top 5</span> by detection probability per second.
+          We pick the{" "}
+          <span style={{ color: "#34d399", fontWeight: 600 }}>top 5</span>
+          {" "}by detection probability per second.
         </p>
       </div>
 
-      <div className="flex items-center gap-6 mb-8 p-4 bg-slate-900 rounded-lg">
+      {/* Control bar */}
+      <div style={{ display: "flex", alignItems: "center", gap: 24, marginBottom: 28, padding: "16px 20px", background: "#13101f", border: "1px solid #2a2045", borderRadius: 12 }}>
         <div>
-          <div className="text-xs text-slate-400 uppercase tracking-wide">SKU</div>
-          <div className="font-mono text-lg">{sku}</div>
+          <div style={{ fontSize: 10, color: "#6d5fa0", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>SKU</div>
+          <div style={{ fontFamily: "var(--font-geist-mono)", fontSize: 15, color: "#a78bfa" }}>{sku}</div>
         </div>
+        <div style={{ width: 1, height: 32, background: "#2a2045" }} />
         <div>
-          <div className="text-xs text-slate-400 uppercase tracking-wide">Product</div>
-          <div className="text-lg">{SKU_NAMES[sku]}</div>
+          <div style={{ fontSize: 10, color: "#6d5fa0", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Product</div>
+          <div style={{ fontSize: 15, color: "#ede9fe" }}>{SKU_NAMES[sku]}</div>
         </div>
+        <div style={{ width: 1, height: 32, background: "#2a2045" }} />
         <div>
-          <div className="text-xs text-slate-400 uppercase tracking-wide">Candidates</div>
-          <div className="text-lg">{CANDIDATE_POOL[sku].length} questions</div>
+          <div style={{ fontSize: 10, color: "#6d5fa0", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Candidates</div>
+          <div style={{ fontSize: 15, color: "#ede9fe" }}>{CANDIDATE_POOL[sku].length} questions</div>
         </div>
-        <div className="ml-auto">
+        <div style={{ marginLeft: "auto" }}>
           <button
             onClick={run}
             disabled={running}
-            className="px-8 py-3 rounded-lg font-semibold text-lg transition-all disabled:opacity-50"
-            style={{ background: running ? "#555" : "#7B1FA2" }}
+            style={{
+              padding: "10px 24px",
+              borderRadius: 8,
+              fontWeight: 600,
+              fontSize: 15,
+              border: "none",
+              cursor: running ? "default" : "pointer",
+              background: running ? "#2a2045" : "linear-gradient(135deg, #7c3aed, #6d28d9)",
+              color: running ? "#6d5fa0" : "#fff",
+              boxShadow: running ? "none" : "0 0 20px rgba(124,58,237,0.4)",
+              transition: "all 0.2s",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
           >
             {running ? (
-              <span className="flex items-center gap-2">
-                <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+              <>
+                <span style={{ width: 14, height: 14, border: "2px solid #6d5fa0", borderTopColor: "#a78bfa", borderRadius: "50%", animation: "spin 0.7s linear infinite", display: "inline-block" }} />
                 Simulating…
-              </span>
-            ) : (
-              "Run simulation"
-            )}
+              </>
+            ) : "Run simulation"}
           </button>
         </div>
       </div>
 
       {result && (
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <div className="text-sm text-slate-400">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <div style={{ fontSize: 13, color: "#6d5fa0" }}>
               Source:{" "}
-              <span className={result.source === "subconscious" ? "text-purple-400" : "text-amber-400"}>
+              <span style={{ color: result.source === "subconscious" ? "#a78bfa" : "#fbbf24", fontWeight: 600 }}>
                 {result.source === "subconscious" ? "Subconscious TIM" : "Monte Carlo fallback"}
               </span>
             </div>
             {totalTime && (
-              <div className="text-sm text-slate-400">
-                Selected script total time:{" "}
-                <span className="text-emerald-400 font-semibold">{totalTime}s</span>
+              <div style={{ fontSize: 13, color: "#6d5fa0" }}>
+                Script total time: <span style={{ color: "#34d399", fontWeight: 600 }}>{totalTime}s</span>
               </div>
             )}
           </div>
 
-          <table className="w-full text-left">
-            <thead className="text-xs text-slate-400 uppercase border-b border-slate-800">
-              <tr>
-                <th className="py-2 w-10">#</th>
-                <th>Question</th>
-                <th className="w-24">Type</th>
-                <th className="w-32">Detection ROI</th>
-                <th className="w-20">Seconds</th>
-                <th className="w-20 text-center">In script</th>
-              </tr>
-            </thead>
-            <tbody>
-              {result.ranked.map((q, i) => (
-                <tr
-                  key={q.id}
-                  className={`border-b border-slate-900 ${i < 5 ? "bg-emerald-950/30" : "opacity-40"}`}
-                >
-                  <td className="py-3 text-2xl font-bold text-slate-500">{q.rank}</td>
-                  <td className="pr-4">{q.instruction}</td>
-                  <td>
-                    <span className={`text-xs px-2 py-0.5 rounded font-mono ${TYPE_BADGE[q.type]}`}>
-                      {q.type}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="h-2 rounded bg-emerald-500"
-                        style={{
-                          width: `${Math.round((q.detectionROI / result.ranked[0].detectionROI) * 80)}px`,
-                        }}
-                      />
-                      <span className="text-emerald-400 text-sm tabular-nums">
-                        {(q.detectionROI * 100).toFixed(2)}%
-                      </span>
-                    </div>
-                  </td>
-                  <td className="tabular-nums">{q.estimatedSeconds}s</td>
-                  <td className="text-center text-xl">{i < 5 ? "✓" : "—"}</td>
+          <div style={{ background: "#13101f", border: "1px solid #2a2045", borderRadius: 12, overflow: "hidden" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid #2a2045" }}>
+                  {["#", "Question", "Type", "Detection ROI", "Sec", "✓"].map((h) => (
+                    <th key={h} style={{ padding: "12px 16px", fontSize: 10, color: "#4b3f72", textTransform: "uppercase", letterSpacing: "0.08em", textAlign: h === "✓" ? "center" : "left", fontWeight: 600 }}>{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {result.ranked.map((q, i) => {
+                  const badge = TYPE_BADGE[q.type] ?? TYPE_BADGE.photo_optional;
+                  const isSelected = i < 5;
+                  return (
+                    <tr key={q.id} style={{ borderBottom: "1px solid #1a1530", background: isSelected ? "rgba(124,58,237,0.04)" : "transparent", opacity: isSelected ? 1 : 0.4 }}>
+                      <td style={{ padding: "14px 16px", fontSize: 20, fontWeight: 700, color: isSelected ? "#7c3aed" : "#4b3f72", width: 48 }}>{q.rank}</td>
+                      <td style={{ padding: "14px 16px", fontSize: 14, color: "#c4b5fd" }}>{q.instruction}</td>
+                      <td style={{ padding: "14px 16px" }}>
+                        <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, fontFamily: "var(--font-geist-mono)", background: badge.bg, color: badge.color }}>
+                          {q.type}
+                        </span>
+                      </td>
+                      <td style={{ padding: "14px 16px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <div style={{ height: 4, borderRadius: 2, background: isSelected ? "#7c3aed" : "#2a2045", width: Math.round((q.detectionROI / result.ranked[0].detectionROI) * 72) }} />
+                          <span style={{ fontSize: 13, color: "#34d399", fontVariantNumeric: "tabular-nums" }}>
+                            {(q.detectionROI * 100).toFixed(2)}%
+                          </span>
+                        </div>
+                      </td>
+                      <td style={{ padding: "14px 16px", fontSize: 13, color: "#7c6fa0", fontVariantNumeric: "tabular-nums" }}>{q.estimatedSeconds}s</td>
+                      <td style={{ padding: "14px 16px", textAlign: "center", fontSize: 16, color: isSelected ? "#34d399" : "#2a2045" }}>{isSelected ? "✓" : "—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </main>
   );
 }
