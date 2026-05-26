@@ -5,14 +5,16 @@ compatibility_flags = ["nodejs_compat"]
 
 [[kv_namespaces]]
 binding = "SESSIONS"
-id = "PLACEHOLDER_KV_ID"
+id = "d056883efd9743c9ad523ab6f275fc07"
 
 [[r2_buckets]]
 binding = "PHOTOS"
 bucket_name = "wayfair-inspection-photos"
 
 [vars]
-BASETEN_VISION_URL = "https://model-PLACEHOLDER.api.baseten.co/production/predict"
-BASETEN_LLM_URL = "https://model-PLACEHOLDER.api.baseten.co/production/predict"
 MOCK_VISION = "1"
-# BASETEN_API_KEY set via `wrangler secret put BASETEN_API_KEY`
+# Set via .dev.vars (local) or `wrangler secret put` (prod):
+#   BASETEN_LLM_ENDPOINT_URL   (e.g. https://model-XXXX.api.baseten.co/environments/production/sync/v1)
+#   BASETEN_LLM_API_KEY
+#   BASETEN_VISION_ENDPOINT_URL
+#   BASETEN_VISION_API_KEY

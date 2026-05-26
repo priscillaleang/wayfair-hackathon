@@ -73,9 +73,10 @@ export type AgentEvent = {
 
 export type Bindings = {
   SESSIONS: KVNamespace;
-  PHOTOS: R2Bucket;
-  BASETEN_VISION_URL: string;
-  BASETEN_LLM_URL: string;
-  BASETEN_API_KEY: string;
+  PHOTOS?: R2Bucket;
+  BASETEN_LLM_ENDPOINT_URL?: string;
+  BASETEN_LLM_API_KEY?: string;
+  BASETEN_VISION_ENDPOINT_URL?: string;
+  BASETEN_VISION_API_KEY?: string;
   MOCK_VISION?: string;
 };

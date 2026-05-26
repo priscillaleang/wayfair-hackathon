@@ -1,4 +1,5 @@
 import type { Order } from './types';
+import { chatUrl } from './vision';
 
 export type DamageFinding = {
   stepIndex: number;
@@ -16,26 +17,41 @@ export type Claim = {
   windowDeadline: string;
 };
 
+type ClaimEnv = {
+  BASETEN_LLM_ENDPOINT_URL?: string;
+  BASETEN_LLM_API_KEY?: string;
+  MOCK_VISION?: string;
+};
+
 export function computeWindow(deliveredAt: string, windowDays: number, filedAt: Date) {
   const delivered = new Date(deliveredAt);
   const deadline = new Date(delivered);
   deadline.setDate(deadline.getDate() + windowDays);
-  return { withinWindow: filedAt <= deadline, windowDeadline: deadline.toISOString().split('T')[0] };
+  return {
+    withinWindow: filedAt <= deadline,
+    windowDeadline: deadline.toISOString().split('T')[0],
+  };
 }
 
 export async function draftClaim(
-  env: { BASETEN_LLM_URL: string; BASETEN_API_KEY: string; MOCK_VISION?: string },
+  env: ClaimEnv,
   order: Order,
   findings: DamageFinding[]
 ): Promise<Claim> {
   const filedAt = new Date();
-  const { withinWindow, windowDeadline } = computeWindow(order.deliveredAt, order.concealedDamageWindowDays, filedAt);
+  const { withinWindow, windowDeadline } = computeWindow(
+    order.deliveredAt,
+    order.concealedDamageWindowDays,
+    filedAt
+  );
   const claimId = `WF-CLM-${Math.floor(Math.random() * 90000) + 10000}`;
 
-  const draftText = await generateClaimText(env, order, findings, filedAt).catch((err) => {
-    console.error('LLM claim drafting failed, using fallback', err);
-    return fallbackClaimText(order, findings, filedAt, windowDeadline);
-  });
+  const draftText = await generateClaimText(env, order, findings, filedAt, windowDeadline).catch(
+    (err) => {
+      console.error('LLM claim drafting failed, using fallback', err);
+      return fallbackClaimText(order, findings, filedAt, windowDeadline);
+    }
+  );
 
   return {
     claimId,
@@ -48,15 +64,18 @@ export async function draftClaim(
 }
 
 async function generateClaimText(
-  env: { BASETEN_LLM_URL: string; BASETEN_API_KEY: string; MOCK_VISION?: string },
+  env: ClaimEnv,
   order: Order,
   findings: DamageFinding[],
-  filedAt: Date
+  filedAt: Date,
+  windowDeadline: string
 ): Promise<string> {
-  if (env.MOCK_VISION === '1' || !env.BASETEN_API_KEY) {
-    const { windowDeadline } = computeWindow(order.deliveredAt, order.concealedDamageWindowDays, filedAt);
+  const url = env.BASETEN_LLM_ENDPOINT_URL?.trim();
+  const key = env.BASETEN_LLM_API_KEY?.trim();
+  if (env.MOCK_VISION === '1' || !url || !key) {
     return fallbackClaimText(order, findings, filedAt, windowDeadline);
   }
+  // MOCK_VISION=vision_only allows real LLM while VLM is mocked
 
   const windowCitation =
     order.carrierType === 'LTL'
@@ -65,7 +84,7 @@ async function generateClaimText(
         ? 'Wayfair Full-Service 3-day reporting window'
         : `${order.concealedDamageWindowDays}-day carrier reporting window`;
 
-  const prompt = `You are drafting a concealed-damage freight claim notification.
+  const userPrompt = `You are drafting a concealed-damage freight claim notification.
 
 Carrier: ${order.carrier}
 Carrier type: ${order.carrierType}
@@ -74,6 +93,7 @@ BOL number: ${order.bolNumber}
 Delivered: ${order.deliveredAt}
 Inspection completed: ${filedAt.toISOString()}
 Concealed damage window: ${order.concealedDamageWindowDays} days (${windowCitation})
+Product value: $${order.value.toFixed(2)}
 
 Damage findings:
 ${findings.map((d) => `- Step ${d.stepIndex}: ${d.severity} damage at ${d.location}. ${d.description}`).join('\n')}
@@ -85,21 +105,43 @@ Draft a concise claim notification (8-12 lines) that:
 4. Cites 49 CFR 370.3 for required claim elements
 5. Requests acknowledgment per 49 U.S.C. § 14706 / 49 CFR 370.9
 
-Output only the claim text. No preamble.`;
+Output ONLY the claim text. No preamble, no markdown.`;
 
-  const res = await fetch(env.BASETEN_LLM_URL, {
+  const res = await fetch(chatUrl(url), {
     method: 'POST',
-    headers: { Authorization: `Api-Key ${env.BASETEN_API_KEY}`, 'content-type': 'application/json' },
-    body: JSON.stringify({ prompt, max_tokens: 500, temperature: 0.2 }),
+    headers: { Authorization: `Bearer ${key}`, 'content-type': 'application/json' },
+    body: JSON.stringify({
+      model: 'baseten',
+      messages: [{ role: 'user', content: userPrompt }],
+      max_tokens: 3000,
+      temperature: 0.2,
+    }),
   });
-  if (!res.ok) throw new Error(`LLM ${res.status}`);
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`LLM ${res.status} ${body.slice(0, 200)}`);
+  }
   const data: any = await res.json();
-  const text = (data.output ?? data.generated_text ?? data.text ?? '').toString().trim();
+  const text = (
+    data?.choices?.[0]?.message?.content ??
+    data?.choices?.[0]?.text ??
+    data?.output ??
+    data?.generated_text ??
+    data?.text ??
+    ''
+  )
+    .toString()
+    .trim();
   if (!text) throw new Error('empty LLM output');
   return text;
 }
 
-function fallbackClaimText(order: Order, findings: DamageFinding[], filedAt: Date, deadline: string): string {
+function fallbackClaimText(
+  order: Order,
+  findings: DamageFinding[],
+  filedAt: Date,
+  deadline: string
+): string {
   const windowCitation =
     order.carrierType === 'LTL'
       ? 'NMFC Item 300135-A (5 business days)'

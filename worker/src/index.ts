@@ -49,7 +49,9 @@ app.post('/api/inspect/photo', async (c) => {
 
   const buffer = await photo.arrayBuffer();
   const photoKey = `${sessionId}/step-${stepIndex}.jpg`;
-  await c.env.PHOTOS.put(photoKey, buffer, { httpMetadata: { contentType: photo.type || 'image/jpeg' } });
+  if (c.env.PHOTOS) {
+    await c.env.PHOTOS.put(photoKey, buffer, { httpMetadata: { contentType: photo.type || 'image/jpeg' } });
+  }
   await emitEvent(c.env, {
     ts: new Date().toISOString(),
     sessionId,
